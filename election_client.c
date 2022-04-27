@@ -4,14 +4,13 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+#include <stdbool.h>
+#include <string.h>
 
 #define MAX 300
 #define PORT 8080
 #define SA struct sockaddr
-
-#include "voter_registration.c"
-#include <stdbool.h>
-#include <string.h>
 
 // Detect OS and define clearing command
 #if defined(_WIN32)
@@ -19,6 +18,23 @@
 #else
 	#define CLEAR_COMMAND "clear"	// Other OS
 # endif
+
+struct voter
+{
+    char fname[50];
+    char lname[50];
+    char reg_no[30];
+    char password[30];
+}info;
+
+// Function Declaration
+char *remove_new_line(char *strbuffer);
+void vote_position(char position[30], int sockfd);
+void vote_for_candidates(int sockfd);
+void registerVoter(int sockfd);
+int tally_votes(int sockfd);
+int register_candidate(int sockfd);
+void func(int sockfd);
 
 char *remove_new_line(char *strbuffer)
 {
@@ -31,16 +47,10 @@ char *remove_new_line(char *strbuffer)
 	return strbuffer;
 }
 
-
-
 void vote_position(char position[30], int sockfd)
 {
-	printf("\n\t\t<<< Position: %s >>>\n\n\t\tCandidates\n", position);
+	printf("\n\t\t<<< Position: %s >>>\n\n\t\t\tCandidates\n", position);
 	char buff[MAX];
-	write(sockfd, buff, sizeof(buff));
-	bzero(buff, sizeof(buff));
-	read(sockfd, buff, sizeof(buff));
-	printf("%s",buff);
 
 	while (strncmp("exit", buff, sizeof(buff)) != 0) {
 
@@ -50,7 +60,10 @@ void vote_position(char position[30], int sockfd)
 		bzero(buff, sizeof(buff));
 		read(sockfd, buff, sizeof(buff));
 
-		printf("%s\n",buff);
+		if (strncmp("ACCEPT", buff, sizeof(buff)) != 0 && strncmp("exit", buff, sizeof(buff)) != 0)
+		{
+			printf("%s",buff);
+		}
 	}
 
 	// Vote confirmation variables
@@ -76,7 +89,7 @@ void vote_position(char position[30], int sockfd)
 
 		printf("\n\t\tYour %s selection: ", position);
 		//print_candidate_on_line(atoi(read_id), path);
-		printf("\n %s \n", buff);
+		printf("%s \n", buff);
 
 		printf("\n\n\t\t[--] Confirm[y/n]: ");
 		scanf("%s", confirm);
@@ -86,48 +99,9 @@ void vote_position(char position[30], int sockfd)
 		//printf("%s",buff);
 		bzero(buff, sizeof(buff));
 		read(sockfd, buff, sizeof(buff));
+		break;
 
-		printf("\n %s", "Done");
 	}
-}
-
-int get_number_of_candidates(char path[30])
-{
-	FILE * fileptr;
-	fileptr = fopen(path, "r");
-
-	char line_str[30];
-	int read_number = 0;
-
-	while (fgets(line_str, sizeof(line_str), fileptr))
-	{
-		read_number++;
-	}
-
-	fclose(fileptr);
-
-	return read_number;
-}
-
-void print_candidate_on_line(int line_number, char path[30])
-{
-	FILE * fileptr;
-	fileptr = fopen(path, "r");
-
-	char line_str[30];
-	int read_number = 1;
-
-	while (fgets(line_str, sizeof(line_str), fileptr))
-	{
-		if (read_number == line_number)
-		{
-			printf("%s", remove_new_line(line_str));
-		}
-
-		read_number++;
-	}
-
-	fclose(fileptr);
 }
 
 void vote_for_candidates(int sockfd)
@@ -169,7 +143,11 @@ void vote_for_candidates(int sockfd)
 		bzero(buff, sizeof(buff));
 		read(sockfd, buff, sizeof(buff));
 
-		//printf("%s", buff);
+		if (strstr(buff, "Success") == NULL)
+		{
+			printf("\n%s", buff);
+			return;
+		}
 
 	}
 

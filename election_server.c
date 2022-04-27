@@ -6,13 +6,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+#include <stdbool.h>
+
 #define MAX 300
 #define PORT 8080
 #define SA struct sockaddr
-
-#include "voter_registration.c"
-#include <stdbool.h>
-#include <string.h>
 
 // Detect OS and define clearing command
 #if defined(_WIN32)
@@ -20,6 +19,22 @@
 #else
 	#define CLEAR_COMMAND "clear"	// Other OS
 # endif
+
+// Declare Functions
+char *remove_new_line(char *strbuffer);
+void write_to_file(char fname[], char lname[], char regnum[], char pwd[], char file_path[]);
+int verify(char voter_file[]);
+bool authenticate_voter(char voter_id[20], int connfd);
+void vote_position(char position[30], int connfd);
+void vote_for_candidates(int connfd);
+int get_number_of_candidates(char path[30]);
+void print_candidate_on_line(int line_number, char path[30], int connfd);
+void registerVoter(int connfd);
+void display_results(char position[30], int *array_ptr, int connfd);
+int tally_votes(int connfd);
+void tally_position(char position[30], int *array_ptr);
+int register_candidate(int connfd);
+void func(int connfd);
 
 char *remove_new_line(char *strbuffer)
 {
@@ -30,6 +45,37 @@ char *remove_new_line(char *strbuffer)
 	}
 
 	return strbuffer;
+}
+
+struct voter
+{
+    char fname[50];
+    char lname[50];
+    char reg_no[30];
+    char password[30];
+}info;
+ 
+void write_to_file(char fname[], char lname[], char regnum[], char pwd[], char file_path[])
+{
+    FILE *voter_file;
+    voter_file = fopen(file_path, "w+");
+    fprintf(voter_file, "%s\n%s\n%s\n%s", regnum, fname, pwd, lname);
+    fclose(voter_file);
+}
+ 
+int verify(char voter_file[])
+{
+    FILE *file;
+    if((file = fopen(voter_file, "r")) != NULL)
+    {
+        fclose(file);
+        // printf("file exists");
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 bool authenticate_voter(char voter_id[20], int connfd)
@@ -95,23 +141,27 @@ bool authenticate_voter(char voter_id[20], int connfd)
         // read the message from client and copy it in buffer
         read(connfd, buff, sizeof(buff));
         strcpy(input_pass, buff);
-		write(connfd, buff, sizeof(buff));
 
 		// Determine if credentials match
-		/*if ((!strcmp(read_name, input_name) && !strcmp(read_pass, input_pass)) || (!strcmp(read_name, input_name) && !strcmp(read_pass, input_pass)))
+
+		if ((strstr(read_name, input_name) != NULL) && (strstr(read_pass, input_pass) != NULL))
 		{
 			//system(CLEAR_COMMAND);
-			//printf("\n\t[++] Success!!!\n");
-            printf("%s %s %s %s", read_name, input_name,read_pass,input_pass);
+			printf("\n\t[++] Successful login!!!\n");
+            //printf("%s %s %s %s", read_name, input_name,read_pass,input_pass);
             strcpy(buff,"\n\t[++] Success!!!\n");
+			write(connfd, buff, sizeof(buff));
 			return true;
 		}
 		else
 		{
 			//system(CLEAR_COMMAND);
-            printf("\n[%s] \n[%s] \n[%s] \n[%s]", read_name, input_name,read_pass,input_pass);
+            //printf("\n[%s] \n[%s] \n[%s] \n[%s]", read_name, input_name,read_pass,input_pass);
 			printf("\n\t[*#@!] No match found :(\n");
-			char retry[1];
+			strcpy(buff,"\n\t[*#@!] No match found :(\n");
+			write(connfd, buff, sizeof(buff));
+			return false;
+			/*char retry[1];
 			printf("\n\t[--] Retry?[y/n]: ");
 			scanf("%s", retry);
 			if (!strcmp(retry, "n"))
@@ -121,8 +171,8 @@ bool authenticate_voter(char voter_id[20], int connfd)
 			else
 			{
 				system(CLEAR_COMMAND);
-			}
-		}*/
+			}*/
+		}
 
 		char position[30];
 		
@@ -155,6 +205,18 @@ void vote_position(char position[30], int connfd)
 	char read_name[30];
 	int line_number = 1;
 
+	bzero(buff, MAX);
+	// read the message from client and copy it in buffer
+	read(connfd, buff, sizeof(buff));
+	strcpy(buff, "ACCEPT");
+	write(connfd, buff, sizeof(buff));
+
+	bzero(buff, MAX);
+	// read the message from client and copy it in buffer
+	read(connfd, buff, sizeof(buff));
+	strcpy(buff, "ACCEPT");
+	write(connfd, buff, sizeof(buff));
+
 	while (fgets(read_name, sizeof(read_name), candfileptr))
 	{
 		bzero(buff, MAX);
@@ -185,7 +247,7 @@ void vote_position(char position[30], int connfd)
         // read the message from client and copy it in buffer
         read(connfd, buff, sizeof(buff));
         strcpy(read_id, buff);
-		printf("%s\n-------------",read_id);
+		printf("%s\n",read_id);
 		
         
 		if (atoi(read_id) > get_number_of_candidates(path))
@@ -201,6 +263,7 @@ void vote_position(char position[30], int connfd)
         // read the message from client and copy it in buffer
         read(connfd, buff, sizeof(buff));
         strcpy(confirm, buff);
+		printf("--------> %s", buff);
         strcpy(buff,"ACCEPT");
         write(connfd, buff, sizeof(buff));
 
@@ -222,7 +285,7 @@ void vote_position(char position[30], int connfd)
 			strcat(read_id, "\n");
 
 			// Append Candidate ID to file
-			fprintf(votesfileptr, read_id);
+			fprintf(votesfileptr,"%s", read_id);
 
 			fclose(votesfileptr);
 			system(CLEAR_COMMAND);
@@ -243,7 +306,7 @@ void vote_for_candidates(int connfd)
     strcpy(buff,"ACCEPT");
     write(connfd, buff, sizeof(buff));
 
-	//authenticate_voter(regInput, connfd);
+	authenticate_voter(regInput, connfd);
 
 	// Iterate positions
 	char position_titles[10][50] = { "Chairperson",
@@ -299,7 +362,7 @@ void print_candidate_on_line(int line_number, char path[30], int connfd)
 		if (read_number == line_number)
 		{
 			//printf("%s", remove_new_line(line_str));
-			snprintf(buff, sizeof(buff), "%s", line_number, remove_new_line(line_str));
+			snprintf(buff, sizeof(buff), "%s", remove_new_line(line_str));
         	write(connfd, buff, sizeof(buff));
 		}
 
@@ -642,7 +705,7 @@ int register_candidate(int connfd)
 
 		default:
 			printf("\nError: Invalid Choice");
-			return;
+			return 1;
 	}
 
     strcpy(buff, "ACCEPT");
