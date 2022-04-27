@@ -111,7 +111,7 @@ void vote_for_candidates(int sockfd)
 	char input_name[20];
 	char input_pass[20];
 	// Authenticate voter
-	printf("Enter your registration number: ");
+	printf("\n\nEnter your registration number: ");
 	scanf("%s", regInput);
 
 	strcpy(buff, regInput);
@@ -269,7 +269,7 @@ int tally_votes(int sockfd)
 		bzero(buff, sizeof(buff));
 		read(sockfd, buff, sizeof(buff));
 
-		printf("%s\n",buff);
+		printf("%s",buff);
 	}
 
 }
@@ -281,7 +281,7 @@ int register_candidate(int sockfd)
 	char reg[20];
 	char buff[MAX];
 
-	printf("\n<<Welcome to SONU Elections Candidates Registration>>\n\n");
+	printf("\n\n<<Welcome to SONU Elections Candidates Registration>>\n\n");
 
 	// Define titles
 	char position_titles[10][50] = { "Chairperson",

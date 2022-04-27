@@ -306,7 +306,13 @@ void vote_for_candidates(int connfd)
     strcpy(buff,"ACCEPT");
     write(connfd, buff, sizeof(buff));
 
-	authenticate_voter(regInput, connfd);
+	// Validate User
+	bool validate = authenticate_voter(regInput, connfd);
+
+	if (!validate)
+	{
+		return;
+	}
 
 	// Iterate positions
 	char position_titles[10][50] = { "Chairperson",
