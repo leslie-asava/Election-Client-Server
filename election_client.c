@@ -441,10 +441,10 @@ int main()
 	else
 		printf("connected to the server..\n");
 
-	// function for chat
+	// function for election
 	func(sockfd);
 
-	// close the socket
+	// close the socket when done
 	close(sockfd);
 }
 

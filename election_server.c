@@ -867,10 +867,10 @@ int main()
 	else
 		printf("server accept the client...\n");
 
-	// Function for chatting between client and server
+	// Function for communication between client and server
 	func(connfd);
 
-	// After chatting close the socket
+	// Close the socket when done
 	close(sockfd);
 }
 
