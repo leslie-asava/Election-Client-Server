@@ -506,7 +506,7 @@ int main() {
     sendto(sockfd, (const char *)hello, strlen(hello),
         MSG_CONFIRM, (const struct sockaddr *) &servaddr, 
             sizeof(servaddr));
-    printf("Hello message sent.\n");
+    printf("Connected to server.\n");
            
     n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
                 MSG_WAITALL, (struct sockaddr *) &servaddr,

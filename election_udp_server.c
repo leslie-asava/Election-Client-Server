@@ -930,7 +930,7 @@ int main() {
     sendto(sockfd, (const char *)hello, strlen(hello), 
         MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
             len);
-    printf("Hello message sent.\n"); 
+    printf("Connected to client.\n"); 
 
     func(sockfd, servaddr, len);
        
