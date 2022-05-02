@@ -518,7 +518,7 @@ void display_results(char position[30], int *array_ptr, int connfd)
         bzero(buff, sizeof(buff));
 	    read(connfd, buff, sizeof(buff));
         
-		snprintf(buff, sizeof(buff),"\n\t\t%d. %s \t-\t %d", line_number, remove_new_line(read_name), array_ptr[line_number]);
+		snprintf(buff, sizeof(buff),"\n\t%d. %s\t   Votes:: %d\n", line_number, read_name, array_ptr[line_number]);
 		write(connfd, buff, sizeof(buff));
         total = total + array_ptr[line_number];
 
@@ -543,7 +543,7 @@ void display_results(char position[30], int *array_ptr, int connfd)
     bzero(buff, sizeof(buff));
 	read(connfd, buff, sizeof(buff));
 
-	snprintf(buff, sizeof(buff), "\n\n\tWINNER :: %s with a total of %d votes[%.2f%%]", winner, max, (max / total) *100);
+	snprintf(buff, sizeof(buff), "\n\n\tWINNER :: %s \twith a total of %d votes[%.2f%%]", winner, max, (max / total) *100);
 	//printf("\n------------------------------------------------------");
     write(connfd, buff, sizeof(buff));
 
